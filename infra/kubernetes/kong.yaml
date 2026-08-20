@@ -18,6 +18,11 @@ data:
             protocols: ["http", "https"]
             strip_path: false
             preserve_host: true
+          - name: bfsi-api-docs
+            paths: ["/docs", "/redoc", "/openapi.json"]
+            protocols: ["http", "https"]
+            strip_path: false
+            preserve_host: true
         plugins:
           - name: correlation-id
             config:

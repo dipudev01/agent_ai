@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import Depends, Header, HTTPException, Request, status
+from fastapi import Depends, Header, HTTPException, Security, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 
 from app.core.security.auth import decode_token
@@ -22,12 +23,20 @@ class Principal:
         return bool(set(self.roles) & {"institution_admin", "compliance_officer", "fraud_analyst", "loan_officer"})
 
 
-def get_principal(request: Request) -> Principal:
-    auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer "):
+bearer_scheme = HTTPBearer(
+    auto_error=False,
+    scheme_name="BearerAuth",
+    description="JWT access token obtained from POST /api/v1/auth/login.",
+)
+
+
+def get_principal(
+    credentials: HTTPAuthorizationCredentials | None = Security(bearer_scheme),
+) -> Principal:
+    if credentials is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="missing bearer token")
     try:
-        claims = decode_token(auth.removeprefix("Bearer "))
+        claims = decode_token(credentials.credentials)
     except JWTError as exc:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="invalid token") from exc
     return Principal(

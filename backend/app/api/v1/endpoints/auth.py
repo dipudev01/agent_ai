@@ -6,9 +6,9 @@ from __future__ import annotations
 import hashlib
 from typing import TypedDict
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
-from app.api.v1.schemas import LoginRequest, LoginResponse
+from app.api.v1.schemas import LoginRequest, LoginResponse, RefreshResponse
 from app.core.config import settings
 from app.core.security.auth import (
     create_access_token,
@@ -43,7 +43,12 @@ _DEMO_USERS: dict[str, _DemoUser] = {
 }
 
 
-@router.post("/login", response_model=LoginResponse)
+@router.post(
+    "/login",
+    response_model=LoginResponse,
+    summary="Log in with email and password",
+    description="Returns access and refresh JWTs for a demo or provisioned user.",
+)
 async def login(body: LoginRequest) -> LoginResponse:
     demo = _DEMO_USERS.get(body.email.lower())
     if demo is None or not verify_password(body.password, demo["password"]):
@@ -69,16 +74,27 @@ async def login(body: LoginRequest) -> LoginResponse:
     )
 
 
-@router.post("/refresh")
-async def refresh(refresh_token: str) -> dict:
+@router.post(
+    "/refresh",
+    response_model=RefreshResponse,
+    summary="Refresh an access token",
+    description="Exchanges a valid refresh JWT for a new access token.",
+)
+async def refresh(
+    refresh_token: str = Query(
+        ...,
+        description="Refresh JWT returned by the login endpoint.",
+        examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.refresh-token"],
+    ),
+) -> RefreshResponse:
     try:
         claims = decode_token(refresh_token)
     except Exception as exc:
         raise HTTPException(status_code=401, detail="invalid refresh token") from exc
     if claims.get("typ") != "refresh":
         raise HTTPException(status_code=401, detail="not a refresh token")
-    return {
-        "access_token": create_access_token(
+    return RefreshResponse(
+        access_token=create_access_token(
             claims["sub"], claims["tenant_id"], claims.get("roles", [])
         )
-    }
+    )

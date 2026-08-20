@@ -18,7 +18,12 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 
 
-@router.post("", response_model=DocumentUploadResponse)
+@router.post(
+    "",
+    response_model=DocumentUploadResponse,
+    summary="Upload and index a document",
+    description="Uploads a tenant-scoped document and runs the RAG ingestion pipeline. Maximum size is 25 MiB.",
+)
 async def upload_document(
     principal: PrincipalDep,
     file: UploadFile = File(...),

@@ -18,7 +18,12 @@ from app.services.agent_service import AgentExecutionError, run_agent_for_user
 router = APIRouter(prefix="/chats", tags=["chats"])
 
 
-@router.post("", response_model=ChatResponse)
+@router.post(
+    "",
+    response_model=ChatResponse,
+    summary="Send a message to an agent",
+    description="Runs the authenticated message through routing, guardrails, tools, and agent execution.",
+)
 async def chat(
     body: ChatRequest,
     request: Request,
