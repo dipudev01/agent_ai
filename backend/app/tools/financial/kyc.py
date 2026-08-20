@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from app.tools.base import Tool, ToolContext, ToolResult
 
-_STATUS = {
+_STATUS: dict[str, dict[str, str | bool | None]] = {
     "cust_1001": {"kyc_status": "verified", "level": "L2", "verified_at": "2026-01-15", "aml_pending": False},
     "cust_1002": {"kyc_status": "pending", "level": "L0", "verified_at": None, "aml_pending": True},
 }
@@ -21,4 +21,9 @@ class KYCCheckTool(Tool):
         status = _STATUS.get(customer_id)
         if status is None:
             return ToolResult.failure(f"no KYC record for {customer_id}")
-        return ToolResult.success(**status)
+        return ToolResult.success(
+            kyc_status=status["kyc_status"],
+            level=status["level"],
+            verified_at=status["verified_at"],
+            aml_pending=status["aml_pending"],
+        )

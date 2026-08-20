@@ -104,13 +104,18 @@ class Agent(ABC):
 
         for _ in range(MAX_TOOL_ROUNDS):
             request = LLMRequest(
-                model=container.llm()._default_model,  # noqa: SLF001 — model default
-                provider="mock",
+                model="",
+                provider="",
                 messages=messages,
                 tools=[t.spec() for t in self._available_tools()],
                 json_mode=self._json_output,
                 tenant_id=inp.tenant_id,
             )
+            from app.gateway.routing import route_for
+
+            route = route_for(request)
+            request.provider = route.provider
+            request.model = route.model
             response = await self._call_llm(request)
             self._guard_output(response.text)
 
@@ -124,12 +129,12 @@ class Agent(ABC):
                         resource_owner_id=inp.resource_owner_id,
                     )
                     try:
-                        result = await execute_tool(tc.name, ctx, tc.arguments)
+                        tool_result = await execute_tool(tc.name, ctx, tc.arguments)
                     except Exception as exc:
-                        result = ToolResult.failure(f"{type(exc).__name__}: {exc}")
+                        tool_result = ToolResult.failure(f"{type(exc).__name__}: {exc}")
                     used_tools.append(tc.name)
-                    tool_outputs.append({"tool": tc.name, "ok": result.ok, "data": result.data})
-                    messages.append(ChatMessage(role="tool", content=repr(result.data)))
+                    tool_outputs.append({"tool": tc.name, "ok": tool_result.ok, "data": tool_result.data})
+                    messages.append(ChatMessage(role="tool", content=repr(tool_result.data)))
                 continue
 
             reply_text = response.text
@@ -164,7 +169,10 @@ class Agent(ABC):
             raise GuardrailError("input rejected by guardrail")
 
     def _guard_output(self, text: str) -> None:
-        from app.core.security.guardrails import detect_jailbreak_attempt, detect_hallucination_marker
+        from app.core.security.guardrails import (
+            detect_hallucination_marker,
+            detect_jailbreak_attempt,
+        )
 
         if detect_jailbreak_attempt(text):
             raise GuardrailError("output rejected by guardrail")

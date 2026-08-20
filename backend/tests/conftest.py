@@ -19,13 +19,13 @@ os.environ["ENCRYPTION_KEY"] = "test-encryption-key-derivation"
 os.environ["LLM_DEFAULT_PROVIDER"] = "mock"
 os.environ["VECTOR_STORE"] = "memory"
 
-import pytest
+import pytest  # noqa: E402
 
-from app.db.base import Base
-from app.db.session import SessionLocal, _engine
+from app.db.base import Base  # noqa: E402
 
 # Ensure all models are registered on Base.metadata before create_all.
 from app.db.models import agent, audit_log, tenant, user  # noqa: F401, E402
+from app.db.session import _engine  # noqa: E402
 
 
 @pytest.fixture(scope="session", autouse=True)

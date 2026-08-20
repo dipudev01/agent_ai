@@ -11,8 +11,8 @@ This module is the ONLY place tools are authorized. Agents can never bypass it.
 
 from __future__ import annotations
 
-from app.core.security.rbac import ABACPolicy, RBAC
-from app.tools.base import Tool, ToolContext
+from app.core.security.rbac import RBAC, ABACPolicy
+from app.tools.base import Tool, ToolContext, ToolResult
 from app.tools.registry import get_tool
 
 
@@ -30,7 +30,7 @@ async def check_opa_policy(tool: Tool, ctx: ToolContext, arguments: dict) -> boo
         return True
     # In production this is an OPA HTTP call. Local fallback enforces least
     # privilege: sensitive tools require an explicit grant attribute.
-    return bool(arguments.get("_approved")) or ctx.roles and "compliance_officer" in ctx.roles
+    return bool(arguments.get("_approved")) or ("compliance_officer" in ctx.roles)
 
 
 def require_approval_ok(tool: Tool, arguments: dict) -> bool:
@@ -67,8 +67,12 @@ async def authorize_tool_execution(
                 f"role lacks permission {tool.required_permission}", "insufficient_permission"
             )
         if used_self_permission:
-            owner = ctx.resource_owner_id or arguments.get("customer_id") or arguments.get("resource_owner_id")
-            if owner != ctx.user_id:
+            resource_owner = arguments.get("customer_id") or arguments.get("resource_owner_id")
+            if (
+                ctx.resource_owner_id is None
+                or ctx.resource_owner_id != ctx.user_id
+                or resource_owner != ctx.resource_owner_id
+            ):
                 raise ToolAuthorizationError(
                     "self-scoped access requires resource ownership", "ownership_required"
                 )

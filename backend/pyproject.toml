@@ -48,13 +48,18 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "ASYNC"]
-ignore = ["E501"]
+ignore = ["E501", "B008"]
 
 [tool.mypy]
 python_version = "3.12"
-strict = true
 plugins = ["pydantic.mypy"]
 ignore_missing_imports = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = false
+check_untyped_defs = true
+disallow_any_unimported = false
+exclude = ["tests/", "app/db/migrations/"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

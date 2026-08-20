@@ -71,6 +71,7 @@ def _parse_text(content: bytes, ext: str) -> str:
     if ext in {"pdf", "doc", "docx"}:
         # Production: PyMuPDF / docling. Returning placeholder for skeleton.
         return content.decode("utf-8", errors="replace")
+    raise IngestionError(f"no parser for extension: {ext}")
 
 
 class Classifier(Step):

@@ -44,7 +44,5 @@ def test_encryption_deterministic_storage():
 
 
 def test_encryption_rejects_wrong_key():
-    enc = encrypt("secret")
     with pytest.raises(ValueError):
-        # monkeypatch not needed: wrong input format raises on decode
         decrypt("not-a-ciphertext")

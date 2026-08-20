@@ -56,7 +56,7 @@ async def test_customer_can_read_own_profile():
         {"customer_id": "cust_1001"},
     )
     assert result.ok is True
-    assert result.data["pan"] == "PANXXXX9999"
+    assert result.data["profile"]["pan"] == "PANXXXX9999"
     assert "priya@example.com" not in str(result.data)
 
 
@@ -94,4 +94,4 @@ async def test_staff_can_read_masked_profile_across_ownership():
         {"customer_id": "cust_1001"},
     )
     assert result.ok is True
-    assert result.data["pan"] == "PANXXXX9999"
+    assert result.data["profile"]["pan"] == "PANXXXX9999"

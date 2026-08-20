@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from app.core.config import settings
 from app.gateway.models import LLMRequest
 
 TIER_FAST = "fast"       # small, cheap, low-latency — summaries, classification
@@ -23,6 +24,16 @@ class Route:
     est_latency_ms: int
 
 
+def _available(provider: str) -> bool:
+    if provider == "openai":
+        return bool(settings.openai_api_key)
+    if provider == "anthropic":
+        return bool(settings.anthropic_api_key)
+    if provider == "ollama":
+        return True
+    return True
+
+
 ROUTES: dict[str, Route] = {
     TIER_FAST: Route("ollama", "qwen2.5:1.5b-instruct", TIER_FAST, 0.0001, 300),
     TIER_BALANCED: Route("openai", "gpt-4o-mini", TIER_BALANCED, 0.00015, 700),
@@ -31,9 +42,14 @@ ROUTES: dict[str, Route] = {
 
 
 def route_for(request: LLMRequest) -> Route:
-    """Choose a route. Extend with tenant budgets, cache hits, and queue depth."""
+    """Choose a route. Extend with tenant budgets, cache hits, and queue depth.
+    Providers that are not configured degrade to the local mock provider."""
     if request.tools:
-        return ROUTES[TIER_STRONG]
-    if request.json_mode:
-        return ROUTES[TIER_BALANCED]
-    return ROUTES[TIER_FAST]
+        route = ROUTES[TIER_STRONG]
+    elif request.json_mode:
+        route = ROUTES[TIER_BALANCED]
+    else:
+        route = ROUTES[TIER_FAST]
+    if not _available(route.provider):
+        return Route("mock", settings.llm_default_model, route.tier, 0.0, 1)
+    return route

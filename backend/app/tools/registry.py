@@ -4,7 +4,8 @@ gateway before they reach any implementation."""
 
 from __future__ import annotations
 
-from app.tools.base import Tool, ToolContext, ToolResult
+from app.gateway.models import ToolSpec
+from app.tools.base import Tool
 
 _registry: dict[str, Tool] = {}
 
@@ -24,17 +25,17 @@ def list_tools() -> dict[str, Tool]:
     return dict(_registry)
 
 
-def list_specs() -> list[object]:
+def list_specs() -> list[ToolSpec]:
     return [t.spec() for t in _registry.values()]
 
 
 def _register_all() -> None:
-    from app.tools.financial.eligibility import EligibilityCheckTool
-    from app.tools.financial.credit import CreditReportTool
-    from app.tools.financial.kyc import KYCCheckTool
+    from app.tools.compliance import SanctionsScreenTool
     from app.tools.customer import GetCustomerProfileTool
     from app.tools.document import SearchDocumentsTool
-    from app.tools.compliance import SanctionsScreenTool
+    from app.tools.financial.credit import CreditReportTool
+    from app.tools.financial.eligibility import EligibilityCheckTool
+    from app.tools.financial.kyc import KYCCheckTool
 
     for tool in (
         EligibilityCheckTool(),

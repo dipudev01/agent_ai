@@ -1,0 +1,71 @@
+# Default values for bfsi-agent chart.
+# Override per environment: values-dev.yaml, values-qa.yaml, values-staging.yaml, values-prod.yaml
+
+image:
+  repository: ghcr.io/org/bfsi-agent-api
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+replicaCount: 3
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  host: api.bfsi.example.com
+  tlsSecret: bfsi-tls
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "2"
+    memory: 2Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 30
+  targetCPUUtilizationPercentage: 70
+
+app:
+  environment: production
+  logLevel: INFO
+  debug: false
+  apiPrefix: /api/v1
+  llmDefaultProvider: mock
+  llmDefaultModel: bfsi-mock
+  vectorStore: opensearch
+
+postgresql:
+  enabled: true
+  auth:
+    username: bfsi
+    database: bfsi_ai
+  primary:
+    persistence:
+      size: 100Gi
+
+redis:
+  enabled: true
+  architecture: replication
+  auth:
+    enabled: true
+
+kafka:
+  enabled: false  # external Kafka/MSK in production
+
+opensearch:
+  enabled: true
+  replicas: 3
+
+secrets:
+  existingSecret: bfsi-app-secrets
+
+serviceAccount:
+  create: true
+  name: bfsi-api-sa

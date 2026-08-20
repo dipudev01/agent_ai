@@ -36,6 +36,7 @@ class SearchDocumentsTool(Tool):
             allowed_document_ids=permitted,
         )
         return ToolResult.success(
+            query=query,
             hits=[{"document_id": h.document_id, "score": round(h.score, 4), "metadata": h.metadata} for h in hits]
         )
 

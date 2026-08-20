@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install -e "backend[dev]"
+      - name: Ruff lint
+        run: cd backend && ruff check app tests
+      - name: Ruff format check
+        run: cd backend && ruff format --check app tests
+      - name: MyPy
+        run: cd backend && mypy app
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install -e "backend[dev]"
+      - name: Unit + integration + security + AI eval
+        run: cd backend && pytest --cov=app --cov-report=xml
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependency audit
+        run: pip-audit -r backend/pyproject.toml
+      - name: SAST (Bandit)
+        run: |
+          pip install bandit
+          bandit -r backend/app -f json -o bandit.json || true
+      - name: Container scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/org/bfsi-agent-api:latest
+          severity: CRITICAL,HIGH
+
+  build-and-push:
+    needs: [lint, test, security-scan]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/Dockerfile
+          push: true
+          tags: ghcr.io/org/bfsi-agent-api:${{ github.sha }},ghcr.io/org/bfsi-agent-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

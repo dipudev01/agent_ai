@@ -15,18 +15,30 @@ def _ctx(tenant="t1", user="u1", roles=("customer",)) -> ToolContext:
 
 async def test_customer_can_read_own_profile():
     tool = get_tool("get_customer_profile")
-    ctx = _ctx()
-    await authorize_tool_execution(tool, ctx, {"customer_id": "u1"}, rbac=default_rbac())
+    ctx = _ctx(user="cust_1001")
+    ctx.resource_owner_id = "cust_1001"
+    await authorize_tool_execution(tool, ctx, {"customer_id": "cust_1001"}, rbac=default_rbac())
     # no exception = allowed
 
 
-async def test_customer_denied_bureau_read():
-    # get_credit_report requires loan:read; customer lacks it.
+async def test_customer_denied_reading_another_tenant():
+    # Cross-tenant read is denied even for staff: subject tenant != resource tenant.
+    tool = get_tool("get_customer_profile")
+    ctx = ToolContext(
+        tenant_id="t1", user_id="u_officer", roles=["loan_officer"],
+        correlation_id="test",
+    )
+    with pytest.raises(ToolAuthorizationError):
+        await authorize_tool_execution(tool, ctx, {"tenant_id": "t2", "customer_id": "cust_1001"}, rbac=default_rbac())
+
+
+async def test_customer_denied_bureau_for_another_customer():
     tool = get_tool("get_credit_report")
-    ctx = _ctx()
+    ctx = _ctx(user="cust_1001", roles=("customer",))
+    ctx.resource_owner_id = "cust_1001"
     with pytest.raises(ToolAuthorizationError) as e:
-        await authorize_tool_execution(tool, ctx, {"customer_id": "u1"}, rbac=default_rbac())
-    assert e.value.code == "insufficient_permission"
+        await authorize_tool_execution(tool, ctx, {"customer_id": "cust_1002"}, rbac=default_rbac())
+    assert e.value.code == "ownership_required"
 
 
 async def test_unregistered_tool_denied():

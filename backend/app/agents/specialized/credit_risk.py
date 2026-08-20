@@ -5,8 +5,8 @@ decisioning/, never by the LLM."""
 from __future__ import annotations
 
 from app.agents.base import Agent
-from app.tools.financial.credit import CreditReportTool
 from app.tools.customer import GetCustomerProfileTool
+from app.tools.financial.credit import CreditReportTool
 
 
 class CreditRiskAgent(Agent):

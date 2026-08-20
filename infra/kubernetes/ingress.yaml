@@ -1,0 +1,53 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bfsi-api-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: bfsi-agent-api
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    - to:
+        - podSelector: {}  # internal service mesh traffic
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 443
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bfsi-api-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/limit-rpm: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/enable-waf: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.bfsi.example.com
+      secretName: bfsi-tls
+  rules:
+    - host: api.bfsi.example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: bfsi-agent-api
+                port:
+                  number: 80

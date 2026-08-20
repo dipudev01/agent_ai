@@ -44,6 +44,8 @@ class SupervisorAgent(Agent):
             from app.agents.registry import get_agent
 
             specialist = get_agent("customer_support")
+        if specialist is None:
+            raise RuntimeError("customer_support agent not registered")
 
         result = await specialist.invoke(inp)
         delegated.append(specialist.key)

@@ -6,6 +6,7 @@ ABAC: attribute-based conditions evaluated at decision time (resource, context).
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -34,9 +35,9 @@ class ABACPolicy:
     """Attribute-based rule: (action, resource) -> callable(attributes) -> bool."""
 
     def __init__(self) -> None:
-        self._rules: list[tuple[str, str, callable]] = []
+        self._rules: list[tuple[str, str, Callable[[dict[str, Any]], bool]]] = []
 
-    def add(self, action: str, resource: str, condition: callable) -> None:
+    def add(self, action: str, resource: str, condition: Callable[[dict[str, Any]], bool]) -> None:
         self._rules.append((action, resource, condition))
 
     def allows(self, action: str, resource: str, attributes: dict[str, Any]) -> bool:

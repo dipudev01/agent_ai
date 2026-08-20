@@ -1,0 +1,37 @@
+apiVersion: v2
+# Values for production: stricter limits, real LLM provider, HPA, HA postgres.
+app:
+  environment: production
+  logLevel: INFO
+  debug: false
+  llmDefaultProvider: openai
+  llmDefaultModel: gpt-4o-mini
+  vectorStore: opensearch
+
+replicaCount: 6
+autoscaling:
+  enabled: true
+  minReplicas: 6
+  maxReplicas: 50
+  targetCPUUtilizationPercentage: 70
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: "4"
+    memory: 4Gi
+
+postgresql:
+  enabled: true
+  auth:
+    username: bfsi
+    database: bfsi_ai
+  primary:
+    persistence:
+      size: 500Gi
+
+serviceAccount:
+  create: true
+  name: bfsi-api-sa

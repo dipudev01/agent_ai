@@ -26,7 +26,7 @@ async def upload_document(
 ):
     content = await file.read()
     if len(content) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="file too large")
+        raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, detail="file too large")
     doc_id = document_id or str(uuid.uuid4())
     try:
         pipeline = build_pipeline(container.vector())

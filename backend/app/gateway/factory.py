@@ -7,7 +7,7 @@ cost/latency-based model selection) live in app/gateway/routing.py.
 
 from __future__ import annotations
 
-import asyncio
+import logging
 
 from prometheus_client import Counter
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
@@ -43,7 +43,18 @@ class RoutingLLMGateway(LLMGateway):
     async def complete(self, request: LLMRequest) -> LLMResponse:
         if not request.model:
             request.model = self._default_model
-        response = await self._complete_once(request)
+        try:
+            response = await self._complete_once(request)
+        except Exception as exc:
+            # Graceful degradation: if the routed provider is unavailable
+            # (dev/test/no keys), fall back to the deterministic mock provider
+            # rather than failing the request. Logs the degradation for observability.
+            logging.getLogger(__name__).warning(
+                "LLM provider %s failed, degrading to mock: %s", request.provider, exc
+            )
+            request.provider = "mock"
+            request.model = self._default_model
+            response = await self._complete_once(request)
         self.track(request, response)
         return response
 

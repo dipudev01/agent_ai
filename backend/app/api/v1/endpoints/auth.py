@@ -4,10 +4,12 @@ provider integration plugs in behind the same token contract."""
 from __future__ import annotations
 
 import hashlib
+from typing import TypedDict
 
 from fastapi import APIRouter, HTTPException
 
 from app.api.v1.schemas import LoginRequest, LoginResponse
+from app.core.config import settings
 from app.core.security.auth import (
     create_access_token,
     create_refresh_token,
@@ -15,14 +17,19 @@ from app.core.security.auth import (
     hash_password,
     verify_password,
 )
-from app.db.models.user import User
-from app.db.session import SessionLocal
 from app.services.audit import record
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+
+class _DemoUser(TypedDict):
+    tenant_id: str
+    roles: list[str]
+    password: str
+
+
 # Demo users seeded for local development only.
-_DEMO_USERS = {
+_DEMO_USERS: dict[str, _DemoUser] = {
     "customer@demo.com": {
         "tenant_id": "t_axisdemo",
         "roles": ["customer"],
@@ -37,7 +44,7 @@ _DEMO_USERS = {
 
 
 @router.post("/login", response_model=LoginResponse)
-async def login(body: LoginRequest):
+async def login(body: LoginRequest) -> LoginResponse:
     demo = _DEMO_USERS.get(body.email.lower())
     if demo is None or not verify_password(body.password, demo["password"]):
         raise HTTPException(status_code=401, detail="invalid credentials")
@@ -58,11 +65,12 @@ async def login(body: LoginRequest):
         user_id=user_id,
         tenant_id=demo["tenant_id"],
         roles=demo["roles"],
+        expires_in=settings.access_token_ttl_minutes * 60,
     )
 
 
 @router.post("/refresh")
-async def refresh(refresh_token: str):
+async def refresh(refresh_token: str) -> dict:
     try:
         claims = decode_token(refresh_token)
     except Exception as exc:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from app.api.dependencies import Principal, PrincipalDep, require_permission
 from app.core.security.auth import hash_password

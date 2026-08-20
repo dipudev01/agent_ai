@@ -8,10 +8,11 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 
-from app.api.dependencies import CorrelationIdDep, PrincipalDep
+from app.api.dependencies import PrincipalDep
 from app.api.v1.schemas import ChatRequest, ChatResponse
+from app.core.config import settings
 from app.services.agent_service import AgentExecutionError, run_agent_for_user
 
 router = APIRouter(prefix="/chats", tags=["chats"])
@@ -20,11 +21,11 @@ router = APIRouter(prefix="/chats", tags=["chats"])
 @router.post("", response_model=ChatResponse)
 async def chat(
     body: ChatRequest,
+    request: Request,
     principal: PrincipalDep,
-    correlation_id: CorrelationIdDep,
 ):
     conversation_id = body.conversation_id or str(uuid.uuid4())
-    correlation = correlation_id or str(uuid.uuid4())
+    correlation = request.headers.get(settings.correlation_header) or str(uuid.uuid4())
     try:
         result = await run_agent_for_user(
             tenant_id=principal.tenant_id,

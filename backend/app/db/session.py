@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from contextvars import ContextVar
+from typing import Any
 
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -23,7 +24,7 @@ from app.core.config import settings
 current_tenant_id: ContextVar[str | None] = ContextVar("current_tenant_id", default=None)
 current_user_id: ContextVar[str | None] = ContextVar("current_user_id", default=None)
 
-_engine_kwargs = {
+_engine_kwargs: dict[str, Any] = {
     "echo": settings.db_echo,
     "pool_pre_ping": True,
 }
@@ -31,12 +32,11 @@ if settings.database_url.startswith("sqlite"):
     # In-memory SQLite requires a static pool so every connection shares one DB.
     from sqlalchemy.pool import StaticPool
 
-    _engine_kwargs.update(
-        poolclass=StaticPool,
-        connect_args={"check_same_thread": False},
-    )
+    _engine_kwargs["poolclass"] = StaticPool
+    _engine_kwargs["connect_args"] = {"check_same_thread": False}
 else:
-    _engine_kwargs.update(pool_size=settings.db_pool_size, max_overflow=settings.db_max_overflow)
+    _engine_kwargs["pool_size"] = settings.db_pool_size
+    _engine_kwargs["max_overflow"] = settings.db_max_overflow
 
 _engine = create_async_engine(settings.database_url, **_engine_kwargs)
 

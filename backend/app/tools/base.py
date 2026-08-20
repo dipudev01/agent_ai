@@ -28,11 +28,11 @@ class ToolResult:
     error: str | None = None
 
     @classmethod
-    def success(cls, **data) -> "ToolResult":
+    def success(cls, **data) -> ToolResult:
         return cls(ok=True, data=data)
 
     @classmethod
-    def failure(cls, error: str) -> "ToolResult":
+    def failure(cls, error: str) -> ToolResult:
         return cls(ok=False, error=error)
 
 

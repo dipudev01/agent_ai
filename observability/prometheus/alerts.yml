@@ -1,0 +1,68 @@
+groups:
+  - name: bfsi-platform
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(bfsi_http_requests_total{status=~"5.."}[5m]))
+          / sum(rate(bfsi_http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "API 5xx rate above 5% for 5 minutes"
+
+      - alert: LLMProviderDegraded
+        expr: rate(bfsi_llm_calls_total{provider="mock"}[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          team: ai-ml
+        annotations:
+          summary: "LLM calls degrading to mock provider — check upstream provider health"
+
+      - alert: TokenBudgetExceeded
+        expr: sum by (tenant) (bfsi_llm_tokens_total) > on(tenant) group_left bfsi_tenant_token_budget
+        for: 10m
+        labels:
+          severity: warning
+          team: finops
+        annotations:
+          summary: "Tenant {{ $labels.tenant }} exceeded token budget"
+
+      - alert: AgentSuccessRateLow
+        expr: |
+          sum(rate(bfsi_agent_runs_total{status="completed"}[5m]))
+          / sum(rate(bfsi_agent_runs_total[5m])) < 0.9
+        for: 10m
+        labels:
+          severity: critical
+          team: ai-ml
+        annotations:
+          summary: "Agent success rate below 90%"
+
+      - alert: SecurityDenialsSpike
+        expr: sum(rate(bfsi_security_denials_total[5m])) > 10
+        for: 10m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "Spike in authorization denials — possible attack"
+
+      - alert: AuditTrailHole
+        expr: time() - max(bfsi_audit_sequence_timestamp) > 120
+        labels:
+          severity: critical
+          team: compliance
+        annotations:
+          summary: "Audit stream not advancing — audit trail may be incomplete"
+
+      - alert: RAGRetrievalQualityLow
+        expr: avg(bfsi_rag_retrieval_score) < 0.6
+        for: 15m
+        labels:
+          severity: warning
+          team: ai-ml
+        annotations:
+          summary: "RAG retrieval quality below threshold"

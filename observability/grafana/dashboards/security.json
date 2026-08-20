@@ -1,0 +1,44 @@
+{
+  "title": "Security & Compliance",
+  "uid": "bfsi-sec",
+  "version": 1,
+  "schemaVersion": 39,
+  "panels": [
+    {
+      "title": "Authorization Denials (possible attacks)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "sum(rate(bfsi_security_denials_total[5m])) by (code)" }
+      ]
+    },
+    {
+      "title": "Audit Stream Progress",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "time() - max(bfsi_audit_sequence_timestamp)" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "thresholds": { "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 120 } ] } }
+      }
+    },
+    {
+      "title": "Guardrail Rejections",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "sum(rate(bfsi_guardrail_rejections_total[5m])) by (type)" }
+      ]
+    },
+    {
+      "title": "Rate Limit Hits",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "sum(rate(bfsi_ratelimit_hits_total[5m]))" }
+      ]
+    }
+  ],
+  "time": { "from": "now-24h", "to": "now" }
+}

@@ -20,9 +20,9 @@ ai_agent/
 ## Quick Start (local dev)
 
 ```bash
-# 1. Backend
+# 1. Backend (requires Python 3.12)
 cd backend
-python -m venv .venv && source .venv/bin/activate
+python3.12 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 cp .env.example .env
 uvicorn app.main:app --reload --port 8000
@@ -39,13 +39,14 @@ OpenAPI docs: `http://localhost:8000/docs`
 ## Key Documents
 
 | Topic | Location |
-|---|---|
-| Architecture (29 sections) | `docs/architecture/*` |
-| Mermaid diagrams | `docs/architecture/diagrams.md` |
+|---|---|---|
+| Architecture (22 sections) | `docs/architecture/00-overview.md` → `docs/architecture/20-request-flow.md` |
+| Technology stack | `docs/architecture/technology-stack.md` |
+| Mermaid diagrams (16) | `docs/architecture/diagrams.md` |
 | Threat model (STRIDE) | `docs/threats/threat-model.md` |
-| Implementation roadmap | `docs/roadmap/roadmap.md` |
+| Implementation roadmap (7 phases) | `docs/roadmap/roadmap.md` |
 | API spec | `backend/app/api/v1/openapi.json` (generated) |
-| Event spec | `backend/app/events/schemas.py` + `docs/architecture/events.md` |
+| Event spec | `backend/app/events/schemas.py` |
 
 ## Non-Negotiable Design Rules
 

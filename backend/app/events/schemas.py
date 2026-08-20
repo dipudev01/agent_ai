@@ -46,7 +46,7 @@ class DomainEvent(BaseModel):
     institution_id: str | None = None
     correlation_id: str
     producer: str
-    occurred_at: str = Field(alias="occurred_at_default")
+    occurred_at: str
     payload: dict[str, Any] = Field(default_factory=dict)
 
     @property

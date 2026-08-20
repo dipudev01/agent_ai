@@ -1,0 +1,55 @@
+{
+  "title": "AI/ML — Model & Agent Health",
+  "uid": "bfsi-aiml",
+  "version": 1,
+  "schemaVersion": 39,
+  "panels": [
+    {
+      "title": "LLM Calls by Provider",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(bfsi_llm_calls_total[5m])) by (provider)",
+          "legendFormat": "{{provider}}"
+        }
+      ]
+    },
+    {
+      "title": "Tokens by Tenant (cost tracking)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(bfsi_llm_tokens_total[5m])) by (tenant)",
+          "legendFormat": "{{tenant}}"
+        }
+      ]
+    },
+    {
+      "title": "Agent Success Rate",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(bfsi_agent_runs_total{status=\"completed\"}[5m])) / sum(rate(bfsi_agent_runs_total[5m]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "thresholds": { "steps": [ { "color": "red", "value": null }, { "color": "yellow", "value": 0.9 }, { "color": "green", "value": 0.95 } ] } }
+      }
+    },
+    {
+      "title": "RAG Retrieval Quality",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "avg(bfsi_rag_retrieval_score)" }
+      ],
+      "fieldConfig": {
+        "defaults": { "min": 0, "max": 1, "thresholds": { "steps": [ { "color": "red", "value": null }, { "color": "yellow", "value": 0.6 }, { "color": "green", "value": 0.8 } ] } }
+      }
+    }
+  ],
+  "time": { "from": "now-24h", "to": "now" }
+}

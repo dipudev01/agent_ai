@@ -13,7 +13,6 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from datetime import UTC, datetime
 
-from app.core.config import settings
 from app.events.schemas import DomainEvent
 
 _consumers: dict[str, list[Callable[[DomainEvent], None]]] = {}

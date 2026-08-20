@@ -25,7 +25,6 @@ async def record(
     ip: str | None = None,
     user_agent: str | None = None,
 ) -> None:
-    from app.core.container import container
 
     # Mask PII before persistence so raw PII never lands in the audit store.
     safe_detail = pii.mask_payload(detail or {})
