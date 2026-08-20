@@ -27,8 +27,11 @@ pip install -e ".[dev]"
 cp .env.example .env
 uvicorn app.main:app --reload --port 8000
 
-# 2. Infrastructure (optional)
-docker compose -f ../infra/docker/docker-compose.yml up -d postgres redis kafka opensearch
+# 2. Infrastructure and Kong API gateway (optional)
+docker compose -f ../infra/docker/docker-compose.yml up -d
+
+# The API is private to the compose network; call it through Kong:
+curl http://localhost:8000/api/v1/health/live
 
 # 3. Tests
 pytest

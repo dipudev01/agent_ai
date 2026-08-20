@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bfsi-kong-config
+data:
+  kong.yml: |
+    _format_version: "3.0"
+    _transform: true
+    services:
+      - name: bfsi-api
+        url: http://bfsi-agent-api.default.svc.cluster.local:80
+        connect_timeout: 5000
+        read_timeout: 120000
+        write_timeout: 120000
+        routes:
+          - name: bfsi-api
+            paths: ["/api"]
+            protocols: ["http", "https"]
+            strip_path: false
+            preserve_host: true
+        plugins:
+          - name: correlation-id
+            config:
+              header_name: X-Correlation-ID
+              generator: uuid
+              echo_downstream: true
+          - name: rate-limiting
+            config:
+              minute: 300
+              policy: local
+              limit_by: ip
+              fault_tolerant: false
+              hide_client_headers: false
+          - name: request-size-limiting
+            config:
+              allowed_payload_size: 10
+              size_unit: megabytes
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bfsi-kong
+  labels:
+    app: bfsi-kong
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bfsi-kong
+  template:
+    metadata:
+      labels:
+        app: bfsi-kong
+    spec:
+      containers:
+        - name: kong
+          image: kong:3.8.0
+          env:
+            - name: KONG_DATABASE
+              value: "off"
+            - name: KONG_DECLARATIVE_CONFIG
+              value: /opt/kong/kong.yml
+            - name: KONG_ADMIN_LISTEN
+              value: "off"
+            - name: KONG_PROXY_ACCESS_LOG
+              value: /dev/stdout
+            - name: KONG_PROXY_ERROR_LOG
+              value: /dev/stderr
+            - name: KONG_STATUS_LISTEN
+              value: 0.0.0.0:8100
+          ports:
+            - name: proxy
+              containerPort: 8000
+            - name: proxy-tls
+              containerPort: 8443
+            - name: status
+              containerPort: 8100
+          volumeMounts:
+            - name: config
+              mountPath: /opt/kong/kong.yml
+              subPath: kong.yml
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: status
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: status
+            periodSeconds: 15
+      volumes:
+        - name: config
+          configMap:
+            name: bfsi-kong-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bfsi-kong
+spec:
+  type: LoadBalancer
+  selector:
+    app: bfsi-kong
+  ports:
+    - name: http
+      port: 80
+      targetPort: proxy
+    - name: https
+      port: 443
+      targetPort: proxy-tls

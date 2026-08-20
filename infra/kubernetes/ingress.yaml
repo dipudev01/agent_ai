@@ -12,6 +12,9 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: ingress-nginx
+        - podSelector:
+            matchLabels:
+              app: bfsi-kong
       ports:
         - protocol: TCP
           port: 8000
@@ -48,6 +51,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: bfsi-agent-api
+                name: bfsi-kong
                 port:
                   number: 80

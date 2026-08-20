@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
     correlation_header: str = "X-Correlation-ID"
+    cors_allowed_origins: list[str] = []
 
     # Security
     jwt_secret: str = Field(default="", repr=False)

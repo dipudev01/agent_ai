@@ -2,13 +2,75 @@
 version: "3.9"
 
 services:
+  api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+    environment:
+      APP_ENV: development
+      DEBUG: "true"
+      CORS_ALLOWED_ORIGINS: '["http://localhost:3001"]'
+      DATABASE_URL: postgresql+asyncpg://bfsi:bfsi@postgres:5432/bfsi_ai
+      REDIS_URL: redis://redis:6379/0
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      OPENSEARCH_URL: http://opensearch:9200
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    expose:
+      - "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/live')"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  kong:
+    image: kong:3.8.0
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /opt/kong/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: "off"
+      KONG_STATUS_LISTEN: 0.0.0.0:8100
+    volumes:
+      - ../kong/kong.yml:/opt/kong/kong.yml:ro
+    ports:
+      - "8000:8000"
+      - "8443:8443"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+    environment:
+      NEXT_PUBLIC_API_BASE: http://localhost:8000/api/v1
+    ports:
+      - "3001:3001"
+    depends_on:
+      kong:
+        condition: service_healthy
+
   postgres:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: bfsi
       POSTGRES_PASSWORD: bfsi
       POSTGRES_DB: bfsi_ai
-    ports: ["5432:5432"]
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -20,7 +82,6 @@ services:
   redis:
     image: redis:7-alpine
     command: ["redis-server", "--appendonly", "yes"]
-    ports: ["6379:6379"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
