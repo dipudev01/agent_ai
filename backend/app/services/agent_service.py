@@ -5,7 +5,7 @@ chats API and consumed as a workflow step by the orchestrator."""
 from __future__ import annotations
 
 from app.agents.base import AgentInput, GuardrailError
-from app.agents.registry import get_agent
+from app.agents.factory import resolve_agent
 from app.agents.router import route
 from app.services.audit import record
 
@@ -36,7 +36,7 @@ async def run_agent_for_user(
         ),
         hint=agent_hint,
     )
-    agent = get_agent(agent_key or "supervisor")
+    agent = resolve_agent(agent_key or "supervisor")
     if agent is None:
         raise AgentExecutionError(f"agent {agent_key} not found")
 

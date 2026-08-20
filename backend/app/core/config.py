@@ -83,6 +83,9 @@ class Settings(BaseSettings):
     eligibility_min_score: int = 550
     fraud_max_risk_score: float = 65.0
 
+    # Agent orchestration: "classic" (built-in loop) or "langgraph" (StateGraph).
+    agent_orchestrator: str = "classic"
+
     @field_validator("jwt_secret", "encryption_key")
     @classmethod
     def reject_placeholder_secrets(cls, v: str, info) -> str:

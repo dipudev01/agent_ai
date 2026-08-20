@@ -41,6 +41,7 @@ dev = [
 ]
 rag = ["sentence-transformers>=3.0", "pgvector>=0.3"]
 providers = ["openai>=1.35", "anthropic>=0.34"]
+graph = ["langgraph>=0.2"]
 
 [tool.ruff]
 line-length = 100
