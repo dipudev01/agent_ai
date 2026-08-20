@@ -19,7 +19,7 @@ from app.core.config import settings
 from app.core.container import container
 from app.core.telemetry import init
 from app.middleware.correlation import CorrelationMiddleware
-from app.middleware.ratelimit import RateLimitMiddleware
+from app.middleware.ratelimit import RateLimitMiddleware, RateLimiter
 from app.middleware.tenant import TenantContextMiddleware
 
 
@@ -45,7 +45,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(RateLimitMiddleware)
+app.add_middleware(RateLimitMiddleware, limiter=RateLimiter(capacity=60, refill_per_sec=10, redis_client=container.redis()))
 app.add_middleware(TenantContextMiddleware)
 app.add_middleware(CorrelationMiddleware)
 

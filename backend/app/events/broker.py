@@ -29,6 +29,8 @@ def subscribe(topic: str):
 
 
 class EventBroker(ABC):
+    started = False
+
     @abstractmethod
     async def start(self) -> None: ...
 
@@ -47,9 +49,11 @@ class LocalEventBroker(EventBroker):
 
     async def start(self) -> None:
         self._started = True
+        self.started = True
 
     async def stop(self) -> None:
         self._started = False
+        self.started = False
 
     async def publish(self, event: DomainEvent) -> None:
         for fn in _consumers.get(event.topic, []):
@@ -69,9 +73,11 @@ class KafkaEventBroker(EventBroker):
 
     async def start(self) -> None:
         await self._producer.start()
+        self.started = True
 
     async def stop(self) -> None:
         await self._producer.stop()
+        self.started = False
 
     async def publish(self, event: DomainEvent) -> None:
         await self._producer.send(

@@ -52,10 +52,12 @@ def default_rbac() -> RBAC:
     # Platform roles
     rbac.grant("platform_admin", "tenant:*")
     rbac.grant("platform_admin", "institution:*")
+    rbac.grant("platform_admin", "user:write")
     # Institution roles
     rbac.grant("institution_admin", "institution:*")
     rbac.grant("institution_admin", "loan:read")
     rbac.grant("institution_admin", "customer:read")
+    rbac.grant("institution_admin", "user:write")
     # Staff roles
     rbac.grant("loan_officer", "loan:read")
     rbac.grant("loan_officer", "loan:write")

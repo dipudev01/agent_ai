@@ -37,7 +37,7 @@ _DEMO_USERS: dict[str, _DemoUser] = {
     },
     "officer@demo.com": {
         "tenant_id": "t_axisdemo",
-        "roles": ["loan_officer", "compliance_officer"],
+        "roles": ["institution_admin", "loan_officer", "compliance_officer"],
         "password": hash_password("demo1234"),
     },
 }

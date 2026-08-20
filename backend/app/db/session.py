@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy import text
 
 from app.core.config import settings
 
@@ -61,3 +62,8 @@ def clear_tenant_context() -> None:
 
 async def close() -> None:
     await _engine.dispose()
+
+
+async def check_database() -> None:
+    async with _engine.connect() as connection:
+        await connection.execute(text("SELECT 1"))

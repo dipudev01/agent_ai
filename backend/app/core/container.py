@@ -11,6 +11,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from app.core.config import settings
+from app.db.session import check_database
 from app.events.broker import EventBroker, KafkaEventBroker, LocalEventBroker
 from app.gateway.llm import LLMGateway
 from app.rag.vectorstore import InMemoryVectorStore, VectorStore
@@ -23,6 +24,7 @@ class Container:
         self._llm: LLMGateway | None = None
         self._events: EventBroker | None = None
         self._vector: VectorStore | None = None
+        self._redis = None
 
     def llm(self) -> LLMGateway:
         if self._llm is None:
@@ -49,6 +51,31 @@ class Container:
                 self._vector = InMemoryVectorStore()
         return self._vector
 
+    def redis(self):
+        if self._redis is None:
+            from redis.asyncio import Redis
+
+            self._redis = Redis.from_url(settings.redis_url, decode_responses=True)
+        return self._redis
+
+    async def readiness(self) -> dict[str, bool]:
+        checks = {"database": False, "redis": False, "events": False}
+        try:
+            await check_database()
+            checks["database"] = True
+        except Exception:
+            pass
+        try:
+            await self.redis().ping()
+            checks["redis"] = True
+        except Exception:
+            pass
+        if settings.app_env == "production":
+            checks["events"] = self._events is not None and self._events.started
+        else:
+            checks["events"] = True
+        return checks
+
     @asynccontextmanager
     async def lifespan(self) -> AsyncIterator[None]:
         await self.events().start()
@@ -56,6 +83,8 @@ class Container:
             yield
         finally:
             await self.events().stop()
+            if self._redis is not None:
+                await self._redis.aclose()
 
 
 container = Container()

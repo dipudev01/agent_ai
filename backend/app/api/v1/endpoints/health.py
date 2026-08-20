@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 
 from app.api.v1.schemas import HealthResponse
+from app.core.container import container
 
 router = APIRouter(tags=["health"])
 
@@ -26,5 +28,7 @@ async def live() -> HealthResponse:
     description="Returns 200 when the API is ready to receive traffic.",
 )
 async def ready() -> HealthResponse:
-    # Production: probe DB, Redis, and Kafka connectivity here.
+    checks = await container.readiness()
+    if not all(checks.values()):
+        return JSONResponse(status_code=503, content={"status": "not_ready", "checks": checks})
     return {"status": "ready"}

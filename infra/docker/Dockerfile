@@ -7,6 +7,7 @@ ENV PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 RUN apt-get update && apt-get install -y --no-install-recommends build-essential && rm -rf /var/lib/apt/lists/*
 
 COPY backend/pyproject.toml ./
+COPY backend/alembic.ini ./
 RUN pip wheel --no-deps -w /wheels . 2>/dev/null || true
 COPY backend/app ./app
 RUN pip install -q . --no-cache-dir
@@ -21,6 +22,7 @@ RUN groupadd -r bfsi && useradd -r -g bfsi bfsi
 WORKDIR /app
 
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /app/alembic.ini ./alembic.ini
 COPY --from=builder /app/app ./app
 
 USER bfsi

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Path, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
 from app.api.dependencies import Principal, PrincipalDep, require_permission
 from app.api.v1.schemas import InstitutionCreatedResponse, TenantCreatedResponse, UserCreatedResponse
@@ -54,13 +54,15 @@ async def create_tenant(
     description="Creates a user within the specified tenant with the supplied roles.",
 )
 async def create_user(
-    principal: PrincipalDep,
+    principal: Principal = Depends(require_permission("user:write")),
     tenant_id: str = Path(..., examples=["t_01J8TENANT"]),
     email: str = Query(..., examples=["user@example.com"]),
     full_name: str = Query(..., examples=["Asha Mehta"]),
     password: str = Query(..., examples=["StrongPassword123!"], min_length=8),
     roles: list[str] = Query(..., examples=[["customer"]]),
 ):
+    if tenant_id != principal.tenant_id and "platform_admin" not in principal.roles:
+        raise HTTPException(status_code=403, detail="tenant access denied")
     async with SessionLocal() as session:
         user = User(
             tenant_id=tenant_id,

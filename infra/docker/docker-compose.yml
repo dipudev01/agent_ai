@@ -2,6 +2,18 @@
 version: "3.9"
 
 services:
+  migrate:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+asyncpg://bfsi:bfsi@postgres:5432/bfsi_ai
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   api:
     build:
       context: ../..
@@ -22,6 +34,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/live')"]
       interval: 10s
@@ -89,7 +103,7 @@ services:
       retries: 10
 
   kafka:
-    image: bitnami/kafka:3.7
+    image: bitnami/kafka:3.7.1
     environment:
       KAFKA_CFG_NODE_ID: 0
       KAFKA_CFG_PROCESS_ROLES: controller,broker
