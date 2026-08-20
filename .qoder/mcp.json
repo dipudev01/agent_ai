@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "code-review-graph": {
+      "command": "/usr/bin/python3",
+      "args": [
+        "-m",
+        "code_review_graph",
+        "serve"
+      ],
+      "cwd": "/var/www/Dipu/Fastapi_Pro/ai_agent",
+      "type": "stdio"
+    }
+  }
+}
